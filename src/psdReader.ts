@@ -442,6 +442,12 @@ function readLayerBlendingRanges(reader: PsdReader) {
 	});
 }
 
+function toDataURL(imageData: ImageData) {
+    const canvas = createCanvas(imageData.width, imageData.height);
+    canvas.getContext('2d')!.putImageData(imageData, 0, 0);
+    return canvas.toDataURL('image/png');
+}
+
 function readLayerChannelImageData(
 	reader: PsdReader, psd: Psd, layer: Layer, channels: ChannelInfo[], options: ReadOptionsExt
 ) {
@@ -487,7 +493,9 @@ function readLayerChannelImageData(
 
 				setupGrayscale(maskData);
 
-				if (options.useImageData) {
+                if (options.useDataUrl) {
+					mask.dataUrl = toDataURL(maskData)
+				} else if (options.useImageData) {
 					mask.imageData = maskData;
 				} else {
 					mask.canvas = createCanvas(maskWidth, maskHeight);
@@ -526,7 +534,9 @@ function readLayerChannelImageData(
 			cmykToRgb(cmykData, imageData, false);
 		}
 
-		if (options.useImageData) {
+        if (options.useDataUrl) {
+			layer.dataUrl = toDataURL(imageData);
+		} else if (options.useImageData) {
 			layer.imageData = imageData;
 		} else {
 			layer.canvas = createCanvas(layerWidth, layerHeight);
@@ -680,7 +690,9 @@ function readImageData(reader: PsdReader, psd: Psd, globalAlpha: boolean, option
 		default: throw new Error(`Color mode not supported: ${psd.colorMode}`);
 	}
 
-	if (options.useImageData) {
+    if (options.useDataUrl) {
+		psd.dataUrl = toDataURL(imageData);
+	} else if (options.useImageData) {
 		psd.imageData = imageData;
 	} else {
 		psd.canvas = createCanvas(psd.width, psd.height);

@@ -235,6 +235,7 @@ export interface LayerMaskData {
 	vectorMaskFeather?: number;
 	canvas?: HTMLCanvasElement;
 	imageData?: ImageData;
+    dataUrl?: string;
 }
 
 export type TextGridding = 'none' | 'round'; // TODO: other values (no idea where to set it up in Photoshop)
@@ -923,6 +924,7 @@ export interface Layer extends LayerAdditionalInfo {
 	clipping?: boolean;
 	canvas?: HTMLCanvasElement;
 	imageData?: ImageData;
+    dataUrl?: string
 	children?: Layer[];
 	/** applies only for layer groups */
 	opened?: boolean;
@@ -937,6 +939,7 @@ export interface Psd extends LayerAdditionalInfo {
 	children?: Layer[];
 	canvas?: HTMLCanvasElement;
 	imageData?: ImageData;
+    dataUrl?: string;
 	imageResources?: ImageResources;
 	linkedFiles?: LinkedFile[]; // used in smart objects
 	artboards?: {
@@ -967,6 +970,8 @@ export interface ReadOptions {
 	throwForMissingFeatures?: boolean;
 	/** Logs if features are missing. */
 	logMissingFeatures?: boolean;
+	/** dataUrl */
+	useDataUrl?: boolean;
 	/** Keep image data as byte array instead of canvas.
 	 * (image data will appear in `imageData` fields instead of `canvas` fields)
 	 * This avoids issues with canvas premultiplied alpha corrupting image data. */
