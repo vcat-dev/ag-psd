@@ -168,6 +168,10 @@ function readShortString(reader: PsdReader, length: number) {
 	return result;
 }
 
+function isValidSignature(sig: string) {
+	return sig === '8BIM' || sig === 'MeSa' || sig === 'AgHg' || sig === 'PHUT' || sig === 'DCSR';
+}
+
 export function readPsd(reader: PsdReader, options: ReadOptions = {}) {
 	// header
 	checkSignature(reader, '8BPS');
@@ -180,12 +184,17 @@ export function readPsd(reader: PsdReader, options: ReadOptions = {}) {
 	const width = readUint32(reader);
 	const bitsPerChannel = readUint16(reader);
 	const colorMode = readUint16(reader);
+	const maxSize = version === 1 ? 30000 : 300000;
 
+	if (width > maxSize || height > maxSize) throw new Error(`Invalid size`);
+	if (channels > 16) throw new Error(`Invalid channel count`);
+	if (bitsPerChannel > 32) throw new Error(`Invalid bitsPerChannel count`);
 	if (supportedColorModes.indexOf(colorMode) === -1)
 		throw new Error(`Color mode not supported: ${colorModes[colorMode] ?? colorMode}`);
 
 	const psd: Psd = { width, height, channels, bitsPerChannel, colorMode };
 	const opt: ReadOptionsExt = { ...options, large: version === 2 };
+	const fixOffsets = [0, 1, -1, 2, -2, 3, -3, 4, -4];
 
 	// color mode data
 	readSection(reader, 1, left => {
@@ -196,10 +205,20 @@ export function readPsd(reader: PsdReader, options: ReadOptions = {}) {
 	// image resources
 	readSection(reader, 1, left => {
 		while (left()) {
-			const sig = readSignature(reader);
+			const sigOffset = reader.offset;
+			let sig = '';
 
-			if (sig !== '8BIM' && sig !== 'MeSa' && sig !== 'AgHg' && sig !== 'PHUT' && sig !== 'DCSR') {
-				throw new Error(`Invalid signature: '${sig}' at 0x${(reader.offset - 4).toString(16)}`);
+			// attempt to fix broken document by realigning with the signature
+			for (const offset of fixOffsets) {
+				try {
+					reader.offset = sigOffset + offset;
+					sig = readSignature(reader);
+				} catch { }
+				if (isValidSignature(sig)) break;
+			}
+
+			if (!isValidSignature(sig)) {
+				throw new Error(`Invalid signature: '${sig}' at 0x${(sigOffset).toString(16)}`);
 			}
 
 			const id = readUint16(reader);
@@ -823,20 +842,23 @@ export function readSection<T>(
 	if (length <= 0 && skipEmpty) return undefined;
 
 	let end = reader.offset + length;
+	if (end > reader.view.byteLength) throw new Error('Section exceeds file size');
+
 	const result = func(() => end - reader.offset);
 
-	if (reader.offset > end) {
-		throw new Error('Exceeded section limits');
-	}
-
 	if (reader.offset !== end && reader.strict) {
-		// throw new Error(`Unread section data: ${end - reader.offset} bytes at 0x${reader.offset.toString(16)}`);
-		console.warn('Unread section data');
+		if (reader.offset > end) {
+			// throw new Error('Exceeded section limits');
+			console.warn('Exceeded section limits');
+		} else {
+			// throw new Error(`Unread section data: ${end - reader.offset} bytes at 0x${reader.offset.toString(16)}`);
+			console.warn('Unread section data');
+		}
 	}
 
 	while (end % round) end++;
-
 	reader.offset = end;
+
 	return result;
 }
 
