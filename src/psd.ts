@@ -203,6 +203,7 @@ export interface LayerEffectGradientOverlay {
 	type?: GradientStyle;
 	offset?: { x: number; y: number; };
 	gradient?: EffectSolidGradient | EffectNoiseGradient;
+	interpolationMethod?: InterpolationMethod;
 }
 
 export interface LayerEffectsInfo {
@@ -254,6 +255,7 @@ export type Justification = 'left' | 'right' | 'center';
 export type LineCapType = 'butt' | 'round' | 'square';
 export type LineJoinType = 'miter' | 'round' | 'bevel';
 export type LineAlignment = 'inside' | 'center' | 'outside';
+export type InterpolationMethod = 'classic' | 'perceptual' | 'linear';
 
 export interface Warp {
 	style?: WarpStyle;
@@ -661,7 +663,7 @@ export type PlacedLayerType = 'unknown' | 'vector' | 'raster' | 'image stack';
 
 export interface PlacedLayer {
 	id: string; // id of linked image file (psd.linkedFiles)
-	placed?: string; // ???
+	placed?: string; // unique id
 	type: PlacedLayerType;
 	// pageNumber: number; // ???
 	// totalPages: number; // ???
@@ -732,6 +734,7 @@ export interface LayerAdditionalInfo {
 	blendClippendElements?: boolean; // has to be set to `true` when using `color burn` blend mode (otherwise `transparencyShapesLayer` is set incorrectly)
 	blendInteriorElements?: boolean;
 	knockout?: boolean;
+	layerMaskAsGlobalMask?: boolean;
 	protected?: {
 		transparency?: boolean;
 		composite?: boolean;
@@ -746,7 +749,7 @@ export interface LayerAdditionalInfo {
 	sectionDivider?: {
 		type: SectionDividerType;
 		key?: string;
-		subType?: number;
+		subType?: number; // 0 = normal, 1 = scene group, affects the animation timeline.
 	};
 	filterMask?: {
 		colorSpace: Color;
@@ -777,6 +780,7 @@ export interface LayerAdditionalInfo {
 	usingAlignedRendering?: boolean;
 	timestamp?: number; // seconds
 	pathList?: {
+		// TODO: ...
 	}[];
 	adjustment?: AdjustmentLayer;
 	placedLayer?: PlacedLayer;
@@ -926,7 +930,7 @@ export interface Layer extends LayerAdditionalInfo {
 	imageData?: ImageData;
     dataUrl?: string
 	children?: Layer[];
-	/** applies only for layer groups */
+	/** Applies only for layer groups. */
 	opened?: boolean;
 }
 
@@ -943,7 +947,7 @@ export interface Psd extends LayerAdditionalInfo {
 	imageResources?: ImageResources;
 	linkedFiles?: LinkedFile[]; // used in smart objects
 	artboards?: {
-		count: number;
+		count: number; // number of artboards in the document
 		autoExpandOffset?: { horizontal: number; vertical: number; };
 		origin?: { horizontal: number; vertical: number; };
 		autoExpandEnabled?: boolean;
@@ -979,7 +983,7 @@ export interface ReadOptions {
 	/** Loads thumbnail raw data instead of decoding it's content into canvas.
 	 * `thumnailRaw` field is used instead. */
 	useRawThumbnail?: boolean;
-	/** Usend only for development */
+	/** Usend only for development. */
 	logDevFeatures?: boolean;
 }
 
@@ -994,8 +998,11 @@ export interface WriteOptions {
 	/** Logs if features are missing. */
 	logMissingFeatures?: boolean;
 	/** Forces bottom layer to be treated as layer and not background even when it's missing any transparency
-	 * 	(by default Photoshop treats bottom layer as background it it doesn't have any transparent pixels) */
+	 * 	(by default Photoshop treats bottom layer as background it it doesn't have any transparent pixels). */
 	noBackground?: boolean;
-	/** Saves document as PSB (Large Document Format) file */
+	/** Saves document as PSB (Large Document Format) file. */
 	psb?: boolean;
+	/** Uses zip compression when writing PSD file, will result in smaller file size but may be incompatible
+	 *  with some software. It may also be significantly slower. */
+	compress?: boolean;
 }

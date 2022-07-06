@@ -1,5 +1,16 @@
 # Changelog
 
+## v14.5.0
+- Added support for zip compression without prediction of image data
+- Added support for `compress` option when writing
+
+## v14.4.0
+- Added support for `layerMaskAsGlobalMask` flag
+- Added support for `interpolationMethod` for gradient overlay layer blending mode
+
+## v14.3.13
+- Fixed handling files with incorrect channel image data length
+
 ## v14.3.11
 - Fixed corrupted file when passing non-integer values to `layer.left`, `.top`, `.right`, `.bottom`
 
