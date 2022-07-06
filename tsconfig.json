@@ -7,8 +7,7 @@
 		"noUnusedParameters": true,
 		"preserveConstEnums": true,
 		"declaration": true,
-		"strict": true,
-        "outDir": "./dist",
+		"strict": true
 	},
 	"exclude": [
 		"node_modules",
